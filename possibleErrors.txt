@@ -34,19 +34,19 @@ A:sudo apt-get install libopenscenegraph-dev
 
 
 
-Q:安装cmake
+Q: Install cmake
 
 A:sudo apt-get install cmake
 
 
-Q:在安装opencv前需要安装libgtk2.0-dev
+Q: You need to install libgtk2.0-dev before installing opencv
 
 A: sudo apt-get install libgtk2.0-dev
 
-Q:安装opencv(3.2.0)
+Q:Install opencv(3.2.0)
 
 A: 
-  cd 相关参考资料
+  cd sources/
   unzip opencv-3.2.0
   cd opencv-3.2.0
   mkdir build && cd build
@@ -54,12 +54,10 @@ A:
   make -j4
   sudo make install
 
-
-
-Q:安装eign3(3.1.0以上)
+Q: Install eign3(3.1.0以上)
 
 A:
-  cd 相关参考资料
+  cd sources/
   unzip eigen-3.3.4.zip
   cd eigen-eigen-5a0156e40feb
   mkdir build && cd build
@@ -68,19 +66,16 @@ A:
   sudo make install
 
 
-Q:安装git
+Q: Install git
 
 A:sudo apt-get install git
 
 
-
-Q:安装Glew
+Q: Install Glew
 
 A:sudo apt-get install libglew-dev
 
-
-
-Q:安装Pangolin
+Q: Install Pangolin
 
 A:
   git clone https://github.com/stevenlovegrove/Pangolin.git
@@ -94,7 +89,8 @@ A:
 
 Q:cannot find -lopencv_imgcodecs
 
-A: 那是因为用的opencv版本不对，用opencv3.2.0就没问题了
+
+A: That's because the wrong version of opencv is used, and there is no problem using opencv3.2.0
 
 
 

@@ -142,8 +142,6 @@ int main(int argc, char** argv)
 #ifdef DEBUG
     arLogLevel = AR_LOG_LEVEL_DEBUG;
 #endif
-
-
 // ==============================ORB-SLAM2======================================
     if(argc != 3)
     {
@@ -510,7 +508,7 @@ static int loadNFTData(void)		// Load the nft dataset for ar2tracking and kpmtra
         if (surfaceSetCount == PAGES_MAX) break;
     }
      
-    // Set the data set to the data set currently tracked by kpm
+    // Set the dataset to the dataset currently tracked by kpm
     if (kpmSetRefDataSet(kpmHandle, refDataSet) < 0) {	// Update refDataSet to kpmHandle-> refDataSet
         ARLOGe("Error: kpmSetRefDataSet\n");
         exit(-1);
@@ -583,7 +581,7 @@ static void mainLoop(void)
 	ARUint8 *image;
 
     // NFT results.
-    static int detectedPage = -2; // -2 Tracking not inited, -1 tracking inited OK, >= 0 tracking online on page.
+    static int detectedPage = -2; // -2 Tracking not initied, -1 tracking initied OK, >= 0 tracking online on page.
     static float trackingTrans[3][4];	// Used to store the transformation matrix of the template coordinate system to the camera coordinate system
     
 
@@ -646,7 +644,6 @@ static void mainLoop(void)
                     detectedPage = -2;
                 } else {
                     ARLOGi("Tracked page %d (max %d).\n", detectedPage, surfaceSetCount - 1);		// Successful tracking
-		    	
                 }
             }
             
@@ -663,9 +660,15 @@ static void mainLoop(void)
             if (markersNFT[i].pageNo >= 0 && markersNFT[i].pageNo == detectedPage) {	// ar2tracking tracking success
                 markersNFT[i].valid = TRUE;
 		
-                for (j = 0; j < 3; j++) for (k = 0; k < 4; k++) markersNFT[i].trans[j][k] = trackingTrans[j][k];	// If ar2tracking is successful, set makersNFT [i] .trans to the result of ar2tracking
+                for (j = 0; j < 3; j++){
+                    for (k = 0; k < 4; k++){
+                        markersNFT[i].trans[j][k] = trackingTrans[j][k];  // If ar2tracking is successful, set makersNFT[i].trans to the result of ar2tracking
+                    }
+                } 	
 	        }
-            else markersNFT[i].valid = FALSE;	// This time tracking failed
+            else{ 
+                markersNFT[i].valid = FALSE; // This time tracking failed
+            }	
 	    
             if (markersNFT[i].valid) {	// this time success
 
@@ -692,10 +695,9 @@ static void mainLoop(void)
                 cv::Mat im(480,640,CV_8UC3,gARTImage);	// Construct mat type image
             
                 
-                if(im.empty())
-                {
-                cerr << endl << "Failed to load image from ARToolkit."<<endl;
-                return;
+                if(im.empty()){
+                    cerr << endl << "Failed to load image from ARToolkit."<<endl;
+                    return;
                 }
                 
                 // Get the current timestamp
@@ -705,58 +707,60 @@ static void mainLoop(void)
                 
                 (*ptr_SLAM).TrackMonocular(im,tframe,Tcm,1); // Import pictures and timestamps and poses into the SLAM system
                 
-                        // =========================================================
-                        
-                        if (!markersNFT[i].validPrev) {		// Last time failed? ——Marker never recognized
-                            // Marker has become visible, tell any dependent objects.
-                            // --->
+                // =========================================================
+                
+                if (!markersNFT[i].validPrev) {		
+                    // Last time failed? ——Marker never recognized
+                    // Marker has become visible, tell any dependent objects.
+                    // --->
+                }
+                
+                // We have a new pose, so set that.
+                arglCameraViewRH((const ARdouble (*)[4])markersNFT[i].trans, markersNFT[i].pose.T, VIEW_SCALEFACTOR);
+                // Tell any dependent objects about the update.
+                // --->
+                
+            } else{	// Fail this time, try to get the calculated pose from ORB-SLAM in the case of ARToolkit tracking failure
+                if((*ptr_State)==ORB_SLAM2::System::OK || (*ptr_State)==ORB_SLAM2::System::LOST)// if ORB-SLAM initialization is successful
+                {
+                    cv::Mat im(480,640,CV_8UC3,gARTImage);	// Construct mat type image
+                    
+                    if(im.empty())
+                    {
+                    cerr << endl << "Failed to load image from ARToolkit."<<endl;
+                    return;
+                    }
+                    
+                    
+                    // Get the current timestamp
+                    std::chrono::system_clock::time_point t_epoch;
+                    std::chrono::duration<double,std::ratio<1,1000000>> duration_micr_sec = std::chrono::system_clock::now() - t_epoch;
+                    double tframe = duration_micr_sec.count() / 1000000.0;	
+                    
+                    cv::Mat Tcm((*ptr_SLAM).TrackMonocular(im,tframe,0)); // Pass the picture and timestamp to the SLAM system to get the transformation matrix of the current template coordinate system to the camera coordinate system
+                    
+                    if((*ptr_State)==ORB_SLAM2::System::OK)	// Position is valid (SLAM tracking is not lost)
+                    {
+                        cout<<"Tracking without losing Tcm:"<<endl<<Tcm<<endl;
+                        for(int m=0;m<3;m++){
+                            for(int n=0;n<4;n++){
+                                markersNFT[i].trans[m][n]=(ARdouble)Tcm.at<float>(m,n);
+                            }
                         }
                         
+                        markersNFT[i].valid = TRUE;	// Change the tracking status to successful
+                        
+                        // Filter the pose estimate.
+                        if (markersNFT[i].ftmi) {		// Perform filtering optimization for pose results
+                            if (arFilterTransMat(markersNFT[i].ftmi, markersNFT[i].trans, 0) < 0) {
+                                        ARLOGe("arFilterTransMat error with marker %d.\n", i);
+                            }
+                        }		      
+
                         // We have a new pose, so set that.
                         arglCameraViewRH((const ARdouble (*)[4])markersNFT[i].trans, markersNFT[i].pose.T, VIEW_SCALEFACTOR);
-                        // Tell any dependent objects about the update.
-                        // --->
-                
-            } else {	// Fail this time, try to get the calculated pose from ORB-SLAM in the case of ARToolkit tracking failure
-                
-		if((*ptr_State)==ORB_SLAM2::System::OK || (*ptr_State)==ORB_SLAM2::System::LOST)// if ORB-SLAM initialization is successful
-		{
-		    cv::Mat im(480,640,CV_8UC3,gARTImage);	// Construct mat type image
-		    
-		    if(im.empty())
-		    {
-		      cerr << endl << "Failed to load image from ARToolkit."<<endl;
-		      return;
-		    }
-		    
-		    
-            // Get the current timestamp
-		    std::chrono::system_clock::time_point t_epoch;
-		    std::chrono::duration<double,std::ratio<1,1000000>> duration_micr_sec = std::chrono::system_clock::now() - t_epoch;
-		    double tframe = duration_micr_sec.count() / 1000000.0;	
-		    
-		    cv::Mat Tcm((*ptr_SLAM).TrackMonocular(im,tframe,0)); // Pass the picture and timestamp to the SLAM system to get the transformation matrix of the current template coordinate system to the camera coordinate system
-		    
-		    if((*ptr_State)==ORB_SLAM2::System::OK)	// Position is valid (SLAM tracking is not lost)
-		    {
-		      cout<<"跟踪未丢失Tcm:"<<endl<<Tcm<<endl;
-		      for(int m=0;m<3;m++)
-			for(int n=0;n<4;n++)
-			  markersNFT[i].trans[m][n]=(ARdouble)Tcm.at<float>(m,n);
-			
-		      markersNFT[i].valid = TRUE;	// Change the tracking status to successful
-		      
-		      // Filter the pose estimate.
-		      if (markersNFT[i].ftmi) {		// Perform filtering optimization for pose results
-			if (arFilterTransMat(markersNFT[i].ftmi, markersNFT[i].trans, 0) < 0) {
-                        ARLOGe("arFilterTransMat error with marker %d.\n", i);
-			}
-		     }		      
-
-		      // We have a new pose, so set that.
-		      arglCameraViewRH((const ARdouble (*)[4])markersNFT[i].trans, markersNFT[i].pose.T, VIEW_SCALEFACTOR);
-		    }
-		}
+                    }
+                }
 		
                 if (markersNFT[i].validPrev) {	// last success?
                     // Marker has ceased to be visible, tell any dependent objects.	// marker from recognition to loss
