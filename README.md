@@ -10,9 +10,13 @@ This project is to research the traditional AR engine ARToolKit and the open sou
 ## 2. Project compile and run
 
 ### 2.1 Preparation
+
 Operating environment: Ubuntu16.04
+
 -Compiling environment: gcc, g ++ (C ++ 11), Cmake (above 2.8)
+
 -Related library dependencies: This program is formed by the combination of ARToolKit project and ORB-SLAM2 project, so the library dependency of this program is the union of ARToolKit and ORB-SLAM2 library dependencies. For the addition of the library dependencies of both, please refer to [ARToolKit5-github](https://github.com/artoolkit/artoolkit5) and [ORB-SLAM2-github](https://github.com/raulmur/ORB_SLAM2)
+
 . If you encounter problems, you can also refer to `problems you may encounter during compilation.
 
 ### 2.2 Program compilation
@@ -90,4 +94,4 @@ Você pode limpar todos os arquivos intermediários, arquivos de biblioteca e ar
 Observe que os aplicativos envolvidos no processo acima podem ser executados no sistema operacional ` Windows ` executando os programas relacionados no diretório `Materiais de referência relacionados / versões do ARToolKit (download do site oficial) / ARToolkit5_windows / ARToolKit5 / bin`.
 
 ### 2.6 Demonstração do efeito do programa
-Consulte: [Demonstração da função de demonstração de rastreamento de extensão AR] (https://v.youku.com/v_show/id_XMzgyMTI5MDE2OA==.html)
+Consulte: [Demonstração da função de demonstração de rastreamento de extensão AR](https://v.youku.com/v_show/id_XMzgyMTI5MDE2OA==.html)
